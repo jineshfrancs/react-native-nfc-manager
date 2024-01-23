@@ -241,8 +241,10 @@ class NfcManager extends ReactContextBaseJavaModule implements ActivityEventList
     }
 
     @ReactMethod
-    public void writeNdefMessage(ReadableArray rnArray, Callback callback) {
+    public void writeNdefMessage(ReadableArray rnArray, ReadableMap options, Callback callback) {
         synchronized(this) {
+            boolean reconnectAfterWrite = options.getBoolean("reconnectAfterWrite");
+            
             if (techRequest != null) {
                 try {
                     Ndef ndef = (Ndef)techRequest.getTechHandle();
@@ -251,6 +253,11 @@ class NfcManager extends ReactContextBaseJavaModule implements ActivityEventList
                     } else {
                         byte[] bytes = rnArrayToBytes(rnArray);
                         ndef.writeNdefMessage(new NdefMessage(bytes));
+                        if (reconnectAfterWrite) {
+                            ndef.close();
+                            //reconnection is needed in order to be able to read the written ndef 
+                            ndef.connect();
+                        }
                         callback.invoke();
                     }
                 } catch (Exception ex) {
@@ -949,34 +956,6 @@ class NfcManager extends ReactContextBaseJavaModule implements ActivityEventList
     }
 
     @ReactMethod
-    public void setNdefPushMessage(ReadableArray rnArray, Callback callback) {
-        synchronized(this) {
-            if (techRequest == null && writeNdefRequest == null) {
-                try {
-                    Activity currentActivity = getCurrentActivity();
-                    if (currentActivity == null) {
-                        throw new RuntimeException("cannot get current activity");
-                    }
-
-                    NdefMessage msgToPush = null;
-                    if (rnArray != null) {
-                        msgToPush = new NdefMessage(rnArrayToBytes(rnArray));
-                    }
-
-                    NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(context);
-                    nfcAdapter.setNdefPushMessage(msgToPush, currentActivity);
-                    callback.invoke();
-                } catch (Exception ex) {
-                    Log.d(LOG_TAG, ex.toString());
-                    callback.invoke(ex.toString());
-                }
-            } else {
-                callback.invoke(ERR_MULTI_REQ);
-            }
-        }
-    }
-
-    @ReactMethod
     public void start(Callback callback) {
         NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(context);
         if (nfcAdapter != null) {
@@ -1325,6 +1304,7 @@ class NfcManager extends ReactContextBaseJavaModule implements ActivityEventList
         // Parcelable[] messages = intent.getParcelableArrayExtra((NfcAdapter.EXTRA_NDEF_MESSAGES));
 
         synchronized(this) {
+            this.tag = tag;
             if (writeNdefRequest != null) {
                 writeNdef(
                         tag,
