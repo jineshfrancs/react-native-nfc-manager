@@ -266,6 +266,7 @@ declare module 'react-native-nfc-manager' {
             le: number;
           },
     ) => Promise<{response: number[]; sw1: number; sw2: number}>;
+    restartTechnologyRequestIOS: () => Promise<NfcTech | null>;
     iso15693HandlerIOS: Iso15693HandlerIOS;
 
     /**
@@ -276,6 +277,8 @@ declare module 'react-native-nfc-manager' {
     transceive(bytes: number[]): Promise<number[]>;
     getMaxTransceiveLength(): Promise<number>;
     setTimeout(timeout: number): Promise<void>;
+    connect: (techs: NfcTech[]) => Promise<void>;
+    close: () => Promise<void>;
     mifareClassicHandlerAndroid: MifareClassicHandlerAndroid;
     mifareUltralightHandlerAndroid: MifareUltralightHandlerAndroid;
     ndefFormatableHandlerAndroid: NdefFormatableHandlerAndroid;
