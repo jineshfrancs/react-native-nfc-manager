@@ -189,7 +189,8 @@ continueUserActivity:(NSUserActivity *)userActivity
     if (techRequestCallback != nil) {
         for (id<NFCTag> tag in tags) {
             NSString * tagType = [self getRNTechName:tag];
-            
+            NSDictionary *tagToSend = @{@"tag" : tag, @"session": session};
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"tag" object:self userInfo:tagToSend];
             for (NSString* requestType in techRequestTypes) {
                 // here we treat Ndef is a special case, because all specific tech types
                 // inherites from NFCNDEFTag, so we simply allow it to connect
